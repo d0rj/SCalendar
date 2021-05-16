@@ -14,8 +14,14 @@ object GoogleEventConverter extends EventConverter[Event] {
   }
 
 
-  implicit def timestampToEventDateTime(timestamp: Timestamp): DateTime =
+  implicit def timestampToDateTime(timestamp: Timestamp): DateTime =
     new DateTime(timestamp.getTime)
+
+
+  implicit def timestampToEventDateTime(timestamp: Timestamp): EventDateTime =
+    new EventDateTime()
+      .setDateTime(timestamp)
+      .setTimeZone("Europe/Moscow")
 
 
   override def convert(anotherEvent: Event): storage.Event =
@@ -31,4 +37,18 @@ object GoogleEventConverter extends EventConverter[Event] {
       completed = if (anotherEvent.getEndTimeUnspecified) false
                 else (anotherEvent.getEnd.getDate.getValue - System.currentTimeMillis()) == 0
     )
+
+
+  override def convert(event: storage.Event): Event =
+    new Event()
+      .setSummary(event.title)
+      .setDescription(event.summary)
+      .setStart(event.date)
+      .setEnd(if (event.duration > 0) new Timestamp(event.date.getTime + event.duration) else event.date)
+      .setKind("calendar#event")
+      .setLocation(event.location match {
+        case Some(l) => l
+        case None => ""
+      })
+      .setEndTimeUnspecified(event.repeating)
 }

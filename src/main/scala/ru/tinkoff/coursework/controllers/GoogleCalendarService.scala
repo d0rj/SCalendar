@@ -5,6 +5,7 @@ import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInsta
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
 import com.google.api.client.googleapis.auth.oauth2.{GoogleAuthorizationCodeFlow, GoogleClientSecrets}
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
@@ -12,7 +13,7 @@ import com.google.api.services.calendar.{Calendar, CalendarScopes}
 import ru.tinkoff.coursework.logic.GoogleEventConverter
 import ru.tinkoff.coursework.storage.Event
 
-import java.io.{File, FileNotFoundException, InputStreamReader}
+import java.io.{File, FileNotFoundException, IOException, InputStreamReader}
 import java.sql.Timestamp
 import java.util.Collections
 import scala.concurrent.Future
@@ -67,11 +68,47 @@ class GoogleCalendarService extends CalendarService {
       .getItems.toArray(new Array[Event](0)).toSeq)
   }
 
-  override def newEvent(event: Event): Future[Boolean] = ???
+  override def newEvent(event: Event): Future[Boolean] =
+    Future.successful(
+      service.events().insert("primary", GoogleEventConverter.convert(event)).execute().getHtmlLink match {
+        case null => false
+        case _ => true
+      }
+    )
 
-  override def completeEvent(eventId: String): Future[Boolean] = ???
+  override def completeEvent(eventId: String): Future[Boolean] = Future.successful(false)
 
-  override def removeEvent(eventId: String): Future[Boolean] = ???
+  override def removeEvent(eventId: String): Future[Boolean] =
+    if (eventId.isEmpty)
+      Future.successful(false)
+    else
+      Future.successful(
+        try {
+          service.events().delete("primary", eventId).execute()
+          true
+        } catch {
+          case _: IOException | GoogleJsonResponseException => false
+        }
+      )
 
-  override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = ???
+  override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = {
+    import ru.tinkoff.coursework.logic.GoogleEventConverter._
+
+    Future.successful({
+      val event = service.events().get("primary", eventId).execute()
+      val duration = event.getStart.getDate match {
+        case null => event.getEnd.getDateTime.getValue - event.getStart.getDateTime.getValue
+        case _ => event.getEnd.getDate.getValue - event.getStart.getDate.getValue
+      }
+      val newEnd = new Timestamp(to.getValue + duration)
+      val newStart = new Timestamp(to.getValue + duration)
+
+      try {
+        service.events().update("primary", eventId, event.setStart(newStart).setEnd(newEnd)).execute()
+        true
+      } catch {
+        case _: IOException | GoogleJsonResponseException => false
+      }
+    })
+  }
 }

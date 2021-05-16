@@ -5,4 +5,6 @@ import ru.tinkoff.coursework.storage.Event
 
 trait EventConverter[T] {
   def convert(anotherEvent: T): Event
+
+  def convert(event: Event): T
 }
