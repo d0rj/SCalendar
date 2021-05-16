@@ -87,7 +87,7 @@ class GoogleCalendarService extends CalendarService {
           service.events().delete("primary", eventId).execute()
           true
         } catch {
-          case _: IOException | GoogleJsonResponseException => false
+          case _ @ (_: IOException | _: GoogleJsonResponseException) => false
         }
       )
 
@@ -107,7 +107,7 @@ class GoogleCalendarService extends CalendarService {
         service.events().update("primary", eventId, event.setStart(newStart).setEnd(newEnd)).execute()
         true
       } catch {
-        case _: IOException | GoogleJsonResponseException => false
+        case _ @ (_: IOException | _: GoogleJsonResponseException) => false
       }
     })
   }
