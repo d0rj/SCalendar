@@ -1,5 +1,6 @@
 package ru.tinkoff.coursework.api
 
+import akka.http.scaladsl.model.StatusCodes
 import ru.tinkoff.coursework.controllers.CalendarService
 import akka.http.scaladsl.server.Route
 import ru.tinkoff.coursework.storage.Event
@@ -16,11 +17,17 @@ class UserCalendarApi(calendarService: CalendarService) {
 
   val stringToTimestamp: Unmarshaller[String, Timestamp] = Unmarshaller.strict[String, Timestamp](Timestamp.valueOf)
 
-  private val findBetween = (path("events" / "between") & parameter("from") & parameter("to")) {
-    (from, to) => get {
-      val fromTime = Timestamp.valueOf(from)
-      val toTime = Timestamp.valueOf(to)
-      complete(calendarService.allBetween(fromTime, toTime))
+  private val findBetween = (path("events" / "between")
+    & parameter("from".?) & parameter("to".?)) { (from, to) =>
+    (from, to) match {
+      case (None, Some(right)) => get { complete(calendarService.earlier(Timestamp.valueOf(right))) }
+      case (Some(left), None) => get { complete(calendarService.later(Timestamp.valueOf(left))) }
+      case (Some(left), Some(right)) => {
+        val fromTime = Timestamp.valueOf(left)
+        val toTime = Timestamp.valueOf(right)
+        complete(calendarService.allBetween(fromTime, toTime))
+      }
+      case _ => get { complete(StatusCodes.BadRequest) }
     }
   }
 

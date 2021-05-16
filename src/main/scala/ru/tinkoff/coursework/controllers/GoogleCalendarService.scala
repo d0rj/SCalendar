@@ -20,6 +20,9 @@ import scala.concurrent.Future
 
 
 class GoogleCalendarService extends CalendarService {
+  import ru.tinkoff.coursework.logic.GoogleEventConverter._
+
+
   private val APPLICATION_NAME = "Calendar App"
   private val JSON_FACTORY = JacksonFactory.getDefaultInstance
   private val TOKENS_DIRECTORY_PATH = "tokens"
@@ -35,6 +38,7 @@ class GoogleCalendarService extends CalendarService {
     authorize(HTTP_TRANSPORT))
     .setApplicationName(APPLICATION_NAME)
     .build()
+
 
   private def authorize(httpTransport: NetHttpTransport): Credential = {
     val in = getClass.getResourceAsStream(CREDENTIALS_FILE_PATH)
@@ -56,9 +60,7 @@ class GoogleCalendarService extends CalendarService {
   }
 
 
-  override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] = {
-    import ru.tinkoff.coursework.logic.GoogleEventConverter._
-
+  override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] =
     Future.successful(service.events().list("primary")
       .setTimeMin(from)
       .setTimeMax(to)
@@ -66,7 +68,29 @@ class GoogleCalendarService extends CalendarService {
       .setSingleEvents(true)
       .execute
       .getItems.toArray(new Array[Event](0)).toSeq)
-  }
+
+
+  override def later(from: Timestamp): Future[Seq[Event]] =
+    Future.successful(
+      service.events().list("primary")
+        .setTimeMin(from)
+        .setOrderBy("startTime")
+        .setSingleEvents(true)
+        .execute()
+        .getItems.toArray(new Array[Event](0)).toSeq
+    )
+
+
+  override def earlier(to: Timestamp): Future[Seq[Event]] =
+    Future.successful(
+      service.events().list("primary")
+        .setTimeMax(to)
+        .setOrderBy("startTime")
+        .setSingleEvents(true)
+        .execute()
+        .getItems.toArray(new Array[Event](0)).toSeq
+    )
+
 
   override def newEvent(event: Event): Future[Boolean] =
     Future.successful(
@@ -76,7 +100,9 @@ class GoogleCalendarService extends CalendarService {
       }
     )
 
+
   override def completeEvent(eventId: String): Future[Boolean] = Future.successful(false)
+
 
   override def removeEvent(eventId: String): Future[Boolean] =
     if (eventId.isEmpty)
@@ -91,9 +117,8 @@ class GoogleCalendarService extends CalendarService {
         }
       )
 
-  override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = {
-    import ru.tinkoff.coursework.logic.GoogleEventConverter._
 
+  override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] =
     Future.successful({
       val event = service.events().get("primary", eventId).execute()
       val duration = event.getStart.getDate match {
@@ -110,5 +135,4 @@ class GoogleCalendarService extends CalendarService {
         case _ @ (_: IOException | _: GoogleJsonResponseException) => false
       }
     })
-  }
 }
