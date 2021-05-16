@@ -4,7 +4,7 @@ import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
 import java.sql.Timestamp
 import scala.concurrent.Future
 
-import slick.jdbc.H2Profile.api._
+import slick.jdbc.MySQLProfile.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
