@@ -10,14 +10,10 @@ import ru.tinkoff.coursework.controllers.{CalendarService, CalendarServiceImpl}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-import slick.jdbc.H2Profile.api._
-
 
 object CalendarHttpApp {
   implicit val ac: ActorSystem = ActorSystem()
   implicit val ec: ExecutionContext = ac.dispatcher
-
-  val db = Database.forConfig("h2mem1")
 
   def main(args: Array[String]): Unit = {
     Await.result(CalendarServiceMain().start(), Duration.Inf)

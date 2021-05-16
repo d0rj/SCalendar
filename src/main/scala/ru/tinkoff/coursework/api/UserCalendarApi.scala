@@ -41,7 +41,7 @@ class UserCalendarApi(calendarService: CalendarService) {
         date = date,
         location = location,
         completed = false,
-        duration = duration
+        duration = duration.toLong
       )
 
       complete(calendarService.newEvent(newEvent))

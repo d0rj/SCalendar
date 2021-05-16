@@ -38,7 +38,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.scalamock" %% "scalamock" % "4.4.0" % Test,
   "org.scalatest" %% "scalatest" % "3.2.2" % Test,
 
-
+  "org.postgresql" % "postgresql" % "9.4-1206-jdbc42"
 )
 
 ThisBuild / Test / parallelExecution := false
