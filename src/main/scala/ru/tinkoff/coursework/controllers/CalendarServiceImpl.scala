@@ -4,7 +4,6 @@ import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
 import java.sql.Timestamp
 import scala.concurrent.{Await, Future}
 import slick.jdbc.MySQLProfile.api._
-import slick.jdbc.meta.MTable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -13,15 +12,7 @@ import scala.concurrent.duration.Duration
 class CalendarServiceImpl extends CalendarService {
   private val db = Database.forConfig("mysqlDB")
 
-  val tables = List(EventsQueryRepository.AllEvents)
-  val existing: Future[Vector[MTable]] = db.run(MTable.getTables)
-  val f: Future[List[Unit]] = existing.flatMap(v => {
-    val names = v.map(mt => mt.name.name)
-    val createIfNotExist = tables.filter( table =>
-      !names.contains(table.baseTableRow.tableName)).map(_.schema.create)
-    db.run(DBIO.sequence(createIfNotExist))
-  })
-  Await.result(f, Duration.Inf)
+  Await.result(db.run(EventsQueryRepository.AllEvents.schema.createIfNotExists), Duration.Inf)
 
 
   override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] =
