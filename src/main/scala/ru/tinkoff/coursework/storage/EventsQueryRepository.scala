@@ -2,13 +2,13 @@ package ru.tinkoff.coursework.storage
 
 import ru.tinkoff.coursework.rdbms.DIO
 import slick.dbio.Effect
-import slick.jdbc.H2Profile.api._
+import slick.jdbc.MySQLProfile.api._
 
 import java.sql.Timestamp
 
 
 object EventsQueryRepository {
-  private val AllEvents = TableQuery[EventsTable]
+  val AllEvents = TableQuery[EventsTable]
 
   private def eventById(id: String): Query[EventsTable, Event, Seq] =
     AllEvents.filter { _.eventId === id }

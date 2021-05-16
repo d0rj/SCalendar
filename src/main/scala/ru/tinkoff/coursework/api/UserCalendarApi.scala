@@ -7,7 +7,6 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 
 import java.sql.Timestamp
-import scala.util.Random
 
 
 class UserCalendarApi(calendarService: CalendarService) {

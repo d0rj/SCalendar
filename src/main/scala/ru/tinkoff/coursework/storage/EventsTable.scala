@@ -1,8 +1,7 @@
 package ru.tinkoff.coursework.storage
 
 import java.sql.Timestamp
-
-import slick.jdbc.H2Profile.api._
+import slick.jdbc.MySQLProfile.api._
 import slick.lifted.ProvenShape
 
 
@@ -12,7 +11,7 @@ class EventsTable(tag: Tag) extends Table[Event](tag, "EVENTS") {
 
   def kind: Rep[String] = column("KIND")
 
-  def date: Rep[Timestamp] = column[Timestamp]("DATE", O.SqlType("START"))
+  def date: Rep[Timestamp] = column[Timestamp]("DATE", O.SqlType("timestamp default now()"))
 
   def duration: Rep[Long] = column("DURATION")
 
