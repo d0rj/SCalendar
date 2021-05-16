@@ -1,10 +1,23 @@
 package ru.tinkoff.coursework.logic
 
-import com.google.api.services.calendar.model.Event
+import com.google.api.client.util.DateTime
+import com.google.api.services.calendar.model.{Event, EventDateTime}
 import ru.tinkoff.coursework.storage
 
+import java.sql.Timestamp
 
-class GoogleEventConverter extends EventConverter[Event] {
+
+object GoogleEventConverter extends EventConverter[Event] {
+  implicit def eventDateTimeToTimestamp(eventDateTime: EventDateTime): Timestamp = eventDateTime.getDate match {
+    case null => new Timestamp(eventDateTime.getDateTime.getValue)
+    case some => new Timestamp(some.getValue)
+  }
+
+
+  implicit def timestampToEventDateTime(timestamp: Timestamp): DateTime =
+    new DateTime(timestamp.getTime)
+
+
   override def convert(anotherEvent: Event): storage.Event =
     new storage.Event(
       id = anotherEvent.getId,

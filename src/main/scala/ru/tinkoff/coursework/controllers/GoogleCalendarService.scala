@@ -9,6 +9,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.calendar.{Calendar, CalendarScopes}
+import ru.tinkoff.coursework.logic.GoogleEventConverter
 import ru.tinkoff.coursework.storage.Event
 
 import java.io.{File, FileNotFoundException, InputStreamReader}
@@ -54,7 +55,17 @@ class GoogleCalendarService extends CalendarService {
   }
 
 
-  override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] = ???
+  override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] = {
+    import ru.tinkoff.coursework.logic.GoogleEventConverter._
+
+    Future.successful(service.events().list("primary")
+      .setTimeMin(from)
+      .setTimeMax(to)
+      .setOrderBy("startTime")
+      .setSingleEvents(true)
+      .execute
+      .getItems.toArray(new Array[Event](0)).toSeq)
+  }
 
   override def newEvent(event: Event): Future[Boolean] = ???
 
