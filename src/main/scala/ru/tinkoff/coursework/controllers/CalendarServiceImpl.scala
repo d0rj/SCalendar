@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class CalendarServiceImpl extends CalendarService {
-  private val db = Database.forConfig("postgresqlDB")
+  private val db = Database.forConfig("mysqlDB")
 
 
   override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] =
