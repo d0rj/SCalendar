@@ -32,13 +32,18 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-nop" % "1.6.4",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
   "com.h2database" % "h2" % "1.4.200",
+  "mysql" % "mysql-connector-java" % "8.0.25",
+
+  // google calendar
+  "com.google.apis" % "google-api-services-calendar" % "v3-rev121-1.20.0",
+  "com.google.api-client" % "google-api-client-java6" % "1.20.0",
+  "com.google.oauth-client" % "google-oauth-client-jetty" % "1.20.0",
+  "com.google.apis" % "google-api-services-oauth2" % "v2-rev91-1.20.0",
 
   "com.typesafe.akka" %% "akka-stream-testkit" % "2.6.13" % Test,
   "com.typesafe.akka" %% "akka-http-testkit" % "10.2.4" % Test,
   "org.scalamock" %% "scalamock" % "4.4.0" % Test,
   "org.scalatest" %% "scalatest" % "3.2.2" % Test,
-
-  "mysql" % "mysql-connector-java" % "8.0.25"
 )
 
 ThisBuild / Test / parallelExecution := false

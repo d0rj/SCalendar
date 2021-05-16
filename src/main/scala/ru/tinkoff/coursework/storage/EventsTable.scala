@@ -8,23 +8,23 @@ import slick.lifted.ProvenShape
 
 class EventsTable(tag: Tag) extends Table[Event](tag, "EVENTS") {
 
-  def eventId: Rep[Int] = column("EVENT_ID", O.PrimaryKey)
+  def eventId: Rep[String] = column("ID", O.PrimaryKey)
 
-  def kind: Rep[String] = column("EVENT_KIND")
+  def kind: Rep[String] = column("KIND")
 
-  def date: Rep[Timestamp] = column[Timestamp]("DATE", O.SqlType("EVENT_START"))
+  def date: Rep[Timestamp] = column[Timestamp]("DATE", O.SqlType("START"))
 
-  def duration: Rep[Long] = column("EVENT_DURATION")
+  def duration: Rep[Long] = column("DURATION")
 
-  def title: Rep[String] = column("EVENT_TITLE")
+  def title: Rep[String] = column("TITLE")
 
-  def summary: Rep[String] = column("EVENT_SUMMARY")
+  def summary: Rep[String] = column("SUMMARY")
 
-  def location: Rep[Option[String]] = column("EVENT_LOCATION")
+  def location: Rep[Option[String]] = column("LOCATION")
 
-  def repeating: Rep[Boolean] = column("EVENT_IS_REPEATING")
+  def repeating: Rep[Boolean] = column("IS_REPEATING")
 
-  def completed: Rep[Boolean] = column("EVENT_COMPLETED")
+  def completed: Rep[Boolean] = column("COMPLETED")
 
 
   override def * : ProvenShape[Event] =

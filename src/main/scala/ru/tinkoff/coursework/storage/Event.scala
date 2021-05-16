@@ -7,7 +7,7 @@ import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 
-case class Event(id: Int,
+case class Event(id: String,
                  kind: String,
                  date: Timestamp,
                  duration: Long,

@@ -4,6 +4,8 @@ import ru.tinkoff.coursework.controllers.CalendarService
 import akka.http.scaladsl.server.Route
 import ru.tinkoff.coursework.storage.Event
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import ru.tinkoff.coursework.logic.AsyncBcryptImpl
+
 import java.sql.Timestamp
 import scala.util.Random
 
@@ -33,7 +35,7 @@ class UserCalendarApi(calendarService: CalendarService) {
     & parameter("location".?)) {
     (title, summary, kind, repeating, date, duration, location) => post {
       val newEvent = new Event(
-        id = new Random().nextInt(title.length + date.getTime.toInt),
+        id = new AsyncBcryptImpl().hash(title + summary + kind),
         title = title,
         summary = summary,
         kind = kind,
@@ -48,19 +50,19 @@ class UserCalendarApi(calendarService: CalendarService) {
     }
   }
 
-  private val endEvent = path("events" / IntNumber / "end") {
+  private val endEvent = path("events" / """.*""".r / "end") {
     eventId => post {
       complete(calendarService.completeEvent(eventId))
     }
   }
 
-  private val deleteEvent = path("events" / IntNumber / "delete") {
+  private val deleteEvent = path("events" / """.*""".r / "delete") {
     eventId => post {
       complete(calendarService.removeEvent(eventId))
     }
   }
 
-  private val moveEvent = (path("events" / IntNumber / "move") & parameter("newDate".as(stringToTimestamp))) {
+  private val moveEvent = (path("events" / """.*""".r / "move") & parameter("newDate".as(stringToTimestamp))) {
     (eventId, newDate) => post {
       complete(calendarService.moveEvent(eventId, newDate))
     }

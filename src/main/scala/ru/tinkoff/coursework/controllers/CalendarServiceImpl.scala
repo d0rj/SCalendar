@@ -22,14 +22,14 @@ class CalendarServiceImpl extends CalendarService {
         case _ => true
       }
 
-  override def completeEvent(eventId: Int): Future[Boolean] =
+  override def completeEvent(eventId: String): Future[Boolean] =
     db.run(EventsQueryRepository.changeCompleted(eventId, newCompleted = true))
       .map {
         case 0 => false
         case _ => true
       }
 
-  override def removeEvent(eventId: Int): Future[Boolean] = {
+  override def removeEvent(eventId: String): Future[Boolean] = {
     db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
       case Some(event) =>
         db.run(EventsQueryRepository.removeEvent(event))
@@ -41,7 +41,7 @@ class CalendarServiceImpl extends CalendarService {
     }
   }
 
-  override def moveEvent(eventId: Int, to: Timestamp): Future[Boolean] = {
+  override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = {
     // sync logic
 
     db.run(EventsQueryRepository.changeDatetime(eventId, to)).map {

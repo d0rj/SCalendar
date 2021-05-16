@@ -10,40 +10,40 @@ import java.sql.Timestamp
 object EventsQueryRepository {
   private val AllEvents = TableQuery[EventsTable]
 
-  private def eventById(id: Int): Query[EventsTable, Event, Seq] =
+  private def eventById(id: String): Query[EventsTable, Event, Seq] =
     AllEvents.filter { _.eventId === id }
 
-  def changeDatetime(id: Int, timestamp: Timestamp): DIO[Int, Effect.Write] =
+  def changeDatetime(id: String, timestamp: Timestamp): DIO[Int, Effect.Write] =
     eventById(id)
       .map { _.date }
       .update { timestamp }
 
-  def changeTitle(id: Int, newTitle: String): DIO[Int, Effect.Write] =
+  def changeTitle(id: String, newTitle: String): DIO[Int, Effect.Write] =
     eventById(id)
       .map { _.title }
       .update { newTitle }
 
-  def changeSummary(id: Int, newSummary: String): DIO[Int, Effect.Write] =
+  def changeSummary(id: String, newSummary: String): DIO[Int, Effect.Write] =
     eventById(id)
       .map { _.summary }
       .update { newSummary }
 
-  def changeLocation(id: Int, newLocation: Option[String]): DIO[Int, Effect.Write] =
+  def changeLocation(id: String, newLocation: Option[String]): DIO[Int, Effect.Write] =
     eventById(id)
       .map { _.location }
       .update { newLocation }
 
-  def changeRepeating(id: Int, newRepeating: Boolean): DIO[Int, Effect.Write] =
+  def changeRepeating(id: String, newRepeating: Boolean): DIO[Int, Effect.Write] =
     eventById(id)
       .map { _.repeating }
       .update { newRepeating }
 
-  def changeCompleted(id: Int, newCompleted: Boolean): DIO[Int, Effect.Write] =
+  def changeCompleted(id: String, newCompleted: Boolean): DIO[Int, Effect.Write] =
     eventById(id)
       .map { _.completed }
       .update { newCompleted }
 
-  def getEvent(id: Int): DIO[Option[Event], Effect.Read] =
+  def getEvent(id: String): DIO[Option[Event], Effect.Read] =
     eventById(id)
       .result.headOption
 
