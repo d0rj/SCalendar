@@ -9,8 +9,9 @@ import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 
 import java.sql.Timestamp
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 
 
 class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService with ThirdPartyService) {
@@ -85,7 +86,12 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
       if (newEvent.kind == "calendar#event")
         complete(googleCalendarService.updateEvent(eventId, newEvent))
 
-      complete(calendarService.updateEvent(eventId, newEvent))
+      val updates = Seq(
+        if (newEvent.kind == "calendar#event") googleCalendarService.updateEvent(eventId, newEvent) else Future.successful(true),
+        calendarService.updateEvent(eventId, newEvent)
+      )
+
+      complete(Future.sequence(updates).map { _.foldLeft(true)(_ && _) })
     }
   }
 
