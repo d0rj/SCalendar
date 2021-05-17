@@ -83,11 +83,11 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
         )
       }
 
-      if (newEvent.kind == "calendar#event")
-        complete(googleCalendarService.updateEvent(eventId, newEvent))
-
       val updates = Seq(
-        if (newEvent.kind == "calendar#event") googleCalendarService.updateEvent(eventId, newEvent) else Future.successful(true),
+        if (newEvent.kind == "calendar#event")
+          googleCalendarService.updateEvent(eventId, newEvent)
+        else
+          Future.successful(true),
         calendarService.updateEvent(eventId, newEvent)
       )
 
