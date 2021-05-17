@@ -19,8 +19,10 @@ import java.sql.Timestamp
 import java.util.Collections
 import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import slick.jdbc.MySQLProfile.api._
+
+import scala.concurrent.duration.Duration
 
 
 class GoogleCalendarService extends CalendarService {
@@ -157,9 +159,20 @@ class GoogleCalendarService extends CalendarService {
       case (None, Some(right)) => earlier(right)
       case (None, None) => throw new EventNotFoundException
     }
+
     val db = Database.forConfig("mysqlDB")
-    events.map { EventsQueryRepository.addEvents }
-      .flatMap { db.run(_) }
-      .flatMap { count => events.map { _.length == count } }
+    val allEvents = Await.result(db.run(EventsQueryRepository.AllEvents.result), Duration.Inf)
+
+    events
+      .map { _.map { e =>
+      if (allEvents.exists { _.id == e.id })
+        DBIO.successful(0)
+      else
+        EventsQueryRepository.addEvent(e)}
+    }
+      .map { _.map { db.run(_) } }
+      .flatMap { Future.sequence(_) }
+      .map { _.sum }
+      .map { _ > 0 }
   }
 }
