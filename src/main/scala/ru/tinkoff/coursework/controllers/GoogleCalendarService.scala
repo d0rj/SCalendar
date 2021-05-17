@@ -10,6 +10,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.calendar.{Calendar, CalendarScopes}
+import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.logic.GoogleEventConverter
 import ru.tinkoff.coursework.storage.Event
 
@@ -116,22 +117,22 @@ class GoogleCalendarService extends CalendarService with ThirdPartyService {
 
 
   override def removeEvent(eventId: String): Future[Boolean] =
-    if (eventId.isEmpty)
-      Future.successful(false)
-    else
       Future.successful(
         try {
           service.events().delete("primary", eventId).execute()
           true
         } catch {
-          case _ @ (_: IOException | _: GoogleJsonResponseException) => false
+          case _ @ (_: IOException | _: GoogleJsonResponseException) => throw new EventNotFoundException
         }
       )
 
 
   override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] =
     Future.successful({
-      val event = service.events().get("primary", eventId).execute()
+      val event = service.events().get("primary", eventId).execute() match {
+        case null => throw new EventNotFoundException
+        case e => e
+      }
       val duration = event.getStart.getDate match {
         case null => event.getEnd.getDateTime.getValue - event.getStart.getDateTime.getValue
         case _ => event.getEnd.getDate.getValue - event.getStart.getDate.getValue
@@ -143,7 +144,7 @@ class GoogleCalendarService extends CalendarService with ThirdPartyService {
         service.events().update("primary", eventId, event.setStart(newStart).setEnd(newEnd)).execute()
         true
       } catch {
-        case _ @ (_: IOException | _: GoogleJsonResponseException) => false
+        case _ @ (_: IOException | _: GoogleJsonResponseException) => throw new EventNotFoundException
       }
     })
 }

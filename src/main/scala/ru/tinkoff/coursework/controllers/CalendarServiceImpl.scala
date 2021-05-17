@@ -1,4 +1,5 @@
 package ru.tinkoff.coursework.controllers
+import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
 
 import java.sql.Timestamp
@@ -33,10 +34,7 @@ class CalendarServiceImpl extends CalendarService {
 
   override def newEvent(event: Event): Future[Boolean] =
     db.run(EventsQueryRepository.addEvent(event))
-      .map {
-        case 0 => false
-        case _ => true
-      }
+      .map { _ > 0 }
 
 
   override def updateEvent(eventId: String, updated: Event): Future[Boolean] = {
@@ -54,13 +52,8 @@ class CalendarServiceImpl extends CalendarService {
 
   override def removeEvent(eventId: String): Future[Boolean] = {
     db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
-      case Some(event) =>
-        db.run(EventsQueryRepository.removeEvent(event))
-          .map {
-            case 0 => false
-            case _ => true
-          }
-      case None => Future.successful(false)
+      case Some(event) => db.run(EventsQueryRepository.removeEvent(event)).map { _ > 0}
+      case None => throw new EventNotFoundException
     }
   }
 
@@ -68,9 +61,9 @@ class CalendarServiceImpl extends CalendarService {
   override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = {
     // sync logic
 
-    db.run(EventsQueryRepository.changeDatetime(eventId, to)).map {
-      case 0 => false
-      case _ => true
+    db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
+      case Some(_) => db.run(EventsQueryRepository.changeDatetime(eventId, to)).map { _ > 0 }
+      case None => throw new EventNotFoundException
     }
   }
 }

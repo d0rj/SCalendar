@@ -1,6 +1,5 @@
 package ru.tinkoff.coursework.controllers
 
-import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.storage.EventsQueryRepository
 
 import java.sql.Timestamp
@@ -18,7 +17,7 @@ trait ThirdPartyService {
       case (Some(left), Some(right)) => allBetween(left, right)
       case (Some(left), None) => later(left)
       case (None, Some(right)) => earlier(right)
-      case (None, None) => throw new EventNotFoundException
+      case (None, None) => throw new IllegalArgumentException
     }
 
     val db = Database.forConfig("mysqlDB")
