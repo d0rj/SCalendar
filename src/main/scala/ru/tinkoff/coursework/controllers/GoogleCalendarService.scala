@@ -19,18 +19,12 @@ import java.sql.Timestamp
 import java.util.Collections
 import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
+import scala.concurrent.Future
 import slick.jdbc.MySQLProfile.api._
 
 
 class GoogleCalendarService extends CalendarService {
   import ru.tinkoff.coursework.logic.GoogleEventConverter._
-
-
-  private val db = Database.forConfig("mysqlDB")
-
-  Await.result(db.run(EventsQueryRepository.AllEvents.schema.createIfNotExists), Duration.Inf)
 
 
   private val APPLICATION_NAME = "Calendar App"
@@ -157,14 +151,15 @@ class GoogleCalendarService extends CalendarService {
     })
 
   override def synchronize(calendarId: String, from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean] = {
-      val events = (from, to) match {
-        case (Some(left), Some(right)) => allBetween(left, right)
-        case (Some(left), None) => later(left)
-        case (None, Some(right)) => earlier(right)
-        case (None, None) => throw new EventNotFoundException
-      }
-      events.map { EventsQueryRepository.addEvents }
-        .flatMap { db.run(_) }
-        .flatMap { count => events.map { _.length == count } }
+    val events = (from, to) match {
+      case (Some(left), Some(right)) => allBetween(left, right)
+      case (Some(left), None) => later(left)
+      case (None, Some(right)) => earlier(right)
+      case (None, None) => throw new EventNotFoundException
+    }
+    val db = Database.forConfig("mysqlDB")
+    events.map { EventsQueryRepository.addEvents }
+      .flatMap { db.run(_) }
+      .flatMap { count => events.map { _.length == count } }
   }
 }
