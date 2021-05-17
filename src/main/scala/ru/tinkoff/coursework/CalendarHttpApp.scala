@@ -5,7 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
 import ru.tinkoff.coursework.api.{CalendarExceptionHandler, UserCalendarApi}
-import ru.tinkoff.coursework.controllers.{CalendarService, CalendarServiceImpl, GoogleCalendarService}
+import ru.tinkoff.coursework.controllers.{CalendarService, CalendarServiceImpl, GoogleCalendarService, ThirdPartyService}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -14,6 +14,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 object CalendarHttpApp {
   implicit val ac: ActorSystem = ActorSystem()
   implicit val ec: ExecutionContext = ac.dispatcher
+
 
   def main(args: Array[String]): Unit = {
     Await.result(CalendarServiceMain().start(), Duration.Inf)
@@ -25,11 +26,10 @@ object CalendarHttpApp {
 case class CalendarServiceMain()(implicit ac: ActorSystem, ec: ExecutionContext) extends LazyLogging {
 
   private val calendarService: CalendarService = new CalendarServiceImpl()
-  private val googleCalendarService: CalendarService = new GoogleCalendarService
+  private val googleCalendarService: CalendarService with ThirdPartyService = new GoogleCalendarService
   private val userCalendarApi: UserCalendarApi = new UserCalendarApi(calendarService, googleCalendarService)
-  private val routes = Route.seal(
-      userCalendarApi.route
-  )(exceptionHandler = CalendarExceptionHandler.exceptionHandler)
+  private val routes = Route.seal(userCalendarApi.route)(exceptionHandler = CalendarExceptionHandler.exceptionHandler)
+
 
   def start(): Future[Http.ServerBinding] =
     Http()

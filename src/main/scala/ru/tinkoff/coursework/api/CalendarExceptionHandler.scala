@@ -10,6 +10,7 @@ import ru.tinkoff.coursework.{CalendarException, CalendarWarning, EventNotFoundE
 object CalendarExceptionHandler {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
+
   val exceptionHandler: ExceptionHandler =
     ExceptionHandler {
       case e: EventNotFoundException => complete(StatusCodes.NotFound, ExceptionResponse(e.getMessage))

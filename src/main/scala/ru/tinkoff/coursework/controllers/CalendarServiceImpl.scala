@@ -50,17 +50,14 @@ class CalendarServiceImpl extends CalendarService {
   }
 
 
-  override def removeEvent(eventId: String): Future[Boolean] = {
+  override def removeEvent(eventId: String): Future[Boolean] =
     db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
       case Some(event) => db.run(EventsQueryRepository.removeEvent(event)).map { _ > 0}
       case None => throw new EventNotFoundException
     }
-  }
 
 
   override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = {
-    // sync logic
-
     db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
       case Some(_) => db.run(EventsQueryRepository.changeDatetime(eventId, to)).map { _ > 0 }
       case None => throw new EventNotFoundException

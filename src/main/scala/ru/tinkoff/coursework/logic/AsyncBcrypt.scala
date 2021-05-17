@@ -17,6 +17,7 @@ class AsyncBcryptImpl extends AsyncBcrypt with StrictLogging {
   override def hash(password: String, rounds: Int): String =
     blocking(password.bcryptBounded(rounds))
 
+
   override def verify(password: String, hash: String): Boolean =
     blocking(password.isBcryptedBounded(hash))
 }

@@ -75,7 +75,8 @@ class GoogleCalendarService extends CalendarService with ThirdPartyService {
       .setOrderBy("startTime")
       .setSingleEvents(true)
       .execute
-      .getItems.asScala.toSeq.map { convert })
+      .getItems.asScala.toSeq.map { convert }
+    )
 
 
   override def later(from: Timestamp): Future[Seq[Event]] =
