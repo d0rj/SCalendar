@@ -65,7 +65,7 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
   }
 
 
-  private val updateEvent = (path("events" / """.*""".r / "update")
+  private val updateEvent = (path("events" / """.*""".r)
     & parameter("title".?)
     & parameter("summary".?)
     & parameter("repeating".as[Boolean].?)
