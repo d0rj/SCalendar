@@ -1,5 +1,5 @@
 package ru.tinkoff.coursework.controllers
-import ru.tinkoff.coursework.EventNotFoundException
+import ru.tinkoff.coursework.{EventNotFoundException, EventsConflictException}
 import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
 
 import java.sql.Timestamp
@@ -59,7 +59,12 @@ class CalendarServiceImpl extends CalendarService {
 
   override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = {
     db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
-      case Some(_) => db.run(EventsQueryRepository.changeDatetime(eventId, to)).map { _ > 0 }
+      case Some(event) =>
+        val newEnd = new Timestamp(to.getTime + event.duration)
+        db.run(EventsQueryRepository.between(to, newEnd).map { _.length }).flatMap {
+          case count if count == 0 => db.run(EventsQueryRepository.changeDatetime(eventId, to)).map { _ > 0 }
+          case _ => throw new EventsConflictException
+        }
       case None => throw new EventNotFoundException
     }
   }

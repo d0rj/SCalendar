@@ -26,11 +26,10 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
     (from, to) match {
       case (None, Some(right)) => get { complete(calendarService.earlier(Timestamp.valueOf(right))) }
       case (Some(left), None) => get { complete(calendarService.later(Timestamp.valueOf(left))) }
-      case (Some(left), Some(right)) => {
+      case (Some(left), Some(right)) =>
         val fromTime = Timestamp.valueOf(left)
         val toTime = Timestamp.valueOf(right)
         complete(calendarService.allBetween(fromTime, toTime))
-      }
       case _ => get { complete(StatusCodes.BadRequest) }
     }
   }
@@ -91,7 +90,7 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
         calendarService.updateEvent(eventId, newEvent)
       )
 
-      complete(Future.sequence(updates).map { _.foldLeft(true)(_ && _) })
+      complete(Future.sequence(updates).map { _.forall(identity) })
     }
   }
 
