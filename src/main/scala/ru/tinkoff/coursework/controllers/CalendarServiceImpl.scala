@@ -1,5 +1,4 @@
 package ru.tinkoff.coursework.controllers
-import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
 
 import java.sql.Timestamp
@@ -74,7 +73,4 @@ class CalendarServiceImpl extends CalendarService {
       case _ => true
     }
   }
-
-  override def synchronize(calendarId: String, from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean] =
-    throw new EventNotFoundException
 }

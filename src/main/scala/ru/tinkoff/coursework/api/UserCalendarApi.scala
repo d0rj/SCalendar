@@ -1,7 +1,7 @@
 package ru.tinkoff.coursework.api
 
 import akka.http.scaladsl.model.StatusCodes
-import ru.tinkoff.coursework.controllers.CalendarService
+import ru.tinkoff.coursework.controllers.{CalendarService, ThirdPartyService}
 import akka.http.scaladsl.server.Route
 import ru.tinkoff.coursework.storage.Event
 import akka.http.scaladsl.unmarshalling.Unmarshaller
@@ -13,7 +13,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 
 
-class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService) {
+class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService with ThirdPartyService) {
   import akka.http.scaladsl.server.Directives._
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
@@ -97,11 +97,10 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
   }
 
   private val syncWithGoogle = (path("events" / "sync" / "google")
-    & parameter("calendarId".withDefault("primary"))
     & parameter("from".as(stringToTimestamp).?)
     & parameter("to".as(stringToTimestamp).?)) {
-      (calendarId, from, to) => post {
-        complete(googleCalendarService.synchronize(calendarId, from, to))
+      (from, to) => post {
+        complete(googleCalendarService.synchronize(from, to))
       }
   }
 

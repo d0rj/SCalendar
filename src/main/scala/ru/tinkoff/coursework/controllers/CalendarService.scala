@@ -22,6 +22,4 @@ trait CalendarService {
   def removeEvent(eventId: String): Future[Boolean]
 
   def moveEvent(eventId: String, to: Timestamp): Future[Boolean]
-
-  def synchronize(calendarId: String, from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean]
 }

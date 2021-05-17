@@ -10,23 +10,18 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.calendar.{Calendar, CalendarScopes}
-import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.logic.GoogleEventConverter
-import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
+import ru.tinkoff.coursework.storage.Event
 
 import java.io.{File, FileNotFoundException, IOException, InputStreamReader}
 import java.sql.Timestamp
 import java.util.Collections
-import scala.jdk.CollectionConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
-import slick.jdbc.MySQLProfile.api._
-
-import scala.concurrent.duration.Duration
+import scala.concurrent.Future
 
 
-class GoogleCalendarService extends CalendarService {
+class GoogleCalendarService extends CalendarService with ThirdPartyService {
   import ru.tinkoff.coursework.logic.GoogleEventConverter._
+  import scala.jdk.CollectionConverters._
 
 
   private val APPLICATION_NAME = "Calendar App"
@@ -151,34 +146,4 @@ class GoogleCalendarService extends CalendarService {
         case _ @ (_: IOException | _: GoogleJsonResponseException) => false
       }
     })
-
-  override def synchronize(calendarId: String, from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean] = {
-    val events = (from, to) match {
-      case (Some(left), Some(right)) => allBetween(left, right)
-      case (Some(left), None) => later(left)
-      case (None, Some(right)) => earlier(right)
-      case (None, None) => throw new EventNotFoundException
-    }
-
-    val db = Database.forConfig("mysqlDB")
-    val allEvents = Await.result(db.run(EventsQueryRepository.AllEvents.result), Duration.Inf)
-
-    events
-      .map { _.map { e =>
-      if (allEvents.exists { _.id == e.id })
-        DBIO.sequence(Seq(
-          EventsQueryRepository.changeTitle(_, e.title),
-          EventsQueryRepository.changeSummary(_, e.summary),
-          EventsQueryRepository.changeLocation(_, e.location),
-          EventsQueryRepository.changeRepeating(_, e.repeating),
-        ).map { _(e.id) })
-          .map { _.sum }
-      else
-        EventsQueryRepository.addEvent(e)}
-    }
-      .map { _.map { db.run(_) } }
-      .flatMap { Future.sequence(_) }
-      .map { _.sum }
-      .map { _ > 0 }
-  }
 }
