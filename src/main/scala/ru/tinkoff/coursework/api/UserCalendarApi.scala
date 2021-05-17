@@ -96,10 +96,13 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
     }
   }
 
-  private val syncWithGoogle = (path("events" / "sync" / "google") & parameter("calendarId")) {
-    calendarId => post {
-      complete(calendarService.synchronize(calendarId, None, None))
-    }
+  private val syncWithGoogle = (path("events" / "sync" / "google")
+    & parameter("calendarId".withDefault("primary"))
+    & parameter("from".as(stringToTimestamp).?)
+    & parameter("to".as(stringToTimestamp).?)) {
+      (calendarId, from, to) => post {
+        complete(googleCalendarService.synchronize(calendarId, from, to))
+      }
   }
 
   def route: Route =

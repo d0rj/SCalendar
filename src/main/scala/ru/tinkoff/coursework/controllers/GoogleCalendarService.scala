@@ -10,17 +10,27 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.calendar.{Calendar, CalendarScopes}
+import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.logic.GoogleEventConverter
-import ru.tinkoff.coursework.storage.Event
+import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
 
 import java.io.{File, FileNotFoundException, IOException, InputStreamReader}
 import java.sql.Timestamp
 import java.util.Collections
-import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+import slick.jdbc.MySQLProfile.api._
 
 
 class GoogleCalendarService extends CalendarService {
   import ru.tinkoff.coursework.logic.GoogleEventConverter._
+
+
+  private val db = Database.forConfig("mysqlDB")
+
+  Await.result(db.run(EventsQueryRepository.AllEvents.schema.createIfNotExists), Duration.Inf)
 
 
   private val APPLICATION_NAME = "Calendar App"
@@ -73,7 +83,7 @@ class GoogleCalendarService extends CalendarService {
       .setOrderBy("startTime")
       .setSingleEvents(true)
       .execute
-      .getItems.toArray(new Array[Event](0)).toSeq)
+      .getItems.asScala.toSeq.map { convert })
 
 
   override def later(from: Timestamp): Future[Seq[Event]] =
@@ -83,7 +93,7 @@ class GoogleCalendarService extends CalendarService {
         .setOrderBy("startTime")
         .setSingleEvents(true)
         .execute()
-        .getItems.toArray(new Array[Event](0)).toSeq
+        .getItems.asScala.toSeq.map { convert }
     )
 
 
@@ -94,7 +104,7 @@ class GoogleCalendarService extends CalendarService {
         .setOrderBy("startTime")
         .setSingleEvents(true)
         .execute()
-        .getItems.toArray(new Array[Event](0)).toSeq
+        .getItems.asScala.toSeq.map { convert }
     )
 
 
@@ -147,6 +157,14 @@ class GoogleCalendarService extends CalendarService {
     })
 
   override def synchronize(calendarId: String, from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean] = {
-    Future.successful(false)
+      val events = (from, to) match {
+        case (Some(left), Some(right)) => allBetween(left, right)
+        case (Some(left), None) => later(left)
+        case (None, Some(right)) => earlier(right)
+        case (None, None) => throw new EventNotFoundException
+      }
+      events.map { EventsQueryRepository.addEvents }
+        .flatMap { db.run(_) }
+        .flatMap { count => events.map { _.length == count } }
   }
 }

@@ -28,12 +28,24 @@ object GoogleEventConverter extends EventConverter[Event] {
     new storage.Event(
       id = anotherEvent.getId,
       title = anotherEvent.getSummary,
-      summary = anotherEvent.getDescription,
+      summary = anotherEvent.getDescription match {
+        case null => ""
+        case _ => anotherEvent.getDescription
+      },
       date = anotherEvent.getStart,
       kind = anotherEvent.getKind,
-      duration = anotherEvent.getEnd.getDate.getValue - anotherEvent.getStart.getDate.getValue,
-      location = Option(anotherEvent.getLocation),
-      repeating = anotherEvent.getEndTimeUnspecified
+      duration = anotherEvent.getEnd.getDate match {
+        case null => anotherEvent.getEnd.getDateTime.getValue - anotherEvent.getStart.getDateTime.getValue
+        case _ => anotherEvent.getEnd.getDate.getValue - anotherEvent.getStart.getDate.getValue
+      },
+      location = anotherEvent.getLocation match {
+        case null => None
+        case _ => Option(anotherEvent.getLocation)
+      },
+      repeating = anotherEvent.getEndTimeUnspecified match {
+        case null => false
+        case _ => anotherEvent.getEndTimeUnspecified
+      }
     )
 
 
