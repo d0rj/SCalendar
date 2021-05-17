@@ -166,7 +166,13 @@ class GoogleCalendarService extends CalendarService {
     events
       .map { _.map { e =>
       if (allEvents.exists { _.id == e.id })
-        DBIO.successful(0)
+        DBIO.sequence(Seq(
+          EventsQueryRepository.changeTitle(_, e.title),
+          EventsQueryRepository.changeSummary(_, e.summary),
+          EventsQueryRepository.changeLocation(_, e.location),
+          EventsQueryRepository.changeRepeating(_, e.repeating),
+        ).map { _(e.id) })
+          .map { _.sum }
       else
         EventsQueryRepository.addEvent(e)}
     }
