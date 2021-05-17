@@ -38,11 +38,6 @@ object EventsQueryRepository {
       .map { _.repeating }
       .update { newRepeating }
 
-  def changeCompleted(id: String, newCompleted: Boolean): DIO[Int, Effect.Write] =
-    eventById(id)
-      .map { _.completed }
-      .update { newCompleted }
-
   def getEvent(id: String): DIO[Option[Event], Effect.Read] =
     eventById(id)
       .result.headOption

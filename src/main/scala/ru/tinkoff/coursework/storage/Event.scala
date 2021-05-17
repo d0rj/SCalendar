@@ -14,8 +14,7 @@ case class Event(id: String,
                  title: String,
                  summary: String,
                  location: Option[String],
-                 repeating: Boolean,
-                 completed: Boolean)
+                 repeating: Boolean)
 
 
 object Event {

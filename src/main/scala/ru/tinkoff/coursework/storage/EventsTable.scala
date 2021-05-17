@@ -23,10 +23,8 @@ class EventsTable(tag: Tag) extends Table[Event](tag, "EVENTS") {
 
   def repeating: Rep[Boolean] = column("IS_REPEATING")
 
-  def completed: Rep[Boolean] = column("COMPLETED")
-
 
   override def * : ProvenShape[Event] =
-    (eventId, kind, date, duration, title, summary, location, repeating, completed) <>
+    (eventId, kind, date, duration, title, summary, location, repeating) <>
       ((Event.apply _).tupled, Event.unapply)
 }

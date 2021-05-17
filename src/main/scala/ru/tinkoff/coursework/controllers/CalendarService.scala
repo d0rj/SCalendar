@@ -15,13 +15,11 @@ trait CalendarService {
 
   def newEvent(event: Event): Future[Boolean]
 
-  def completeEvent(eventId: String): Future[Boolean]
-
   def removeEvent(eventId: String): Future[Boolean]
 
   def moveEvent(eventId: String, to: Timestamp): Future[Boolean]
 
-  // def synchronize(userId: Int): Future[Boolean]
+  def synchronize(calendarId: String, from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean]
 
   // def invite(userId: Int, eventId: Int)
 

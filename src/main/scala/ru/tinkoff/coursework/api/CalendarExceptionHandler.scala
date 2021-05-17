@@ -11,6 +11,6 @@ object CalendarExceptionHandler {
 
   val exceptionHandler: ExceptionHandler =
     ExceptionHandler {
-      case e: CalendarException => complete(BadRequest, ExceptionResponse(e.getMessage))
+      case e: CalendarException => complete(BadRequest, ExceptionResponse(s"This is error ~ ${e.getMessage}"))
     }
 }

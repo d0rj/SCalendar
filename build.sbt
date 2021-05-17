@@ -29,9 +29,7 @@ ThisBuild / libraryDependencies ++= Seq(
 
   // slick
   "com.typesafe.slick" %% "slick" % "3.3.3",
-  "org.slf4j" % "slf4j-nop" % "1.6.4",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.3.3",
-  "com.h2database" % "h2" % "1.4.200",
   "mysql" % "mysql-connector-java" % "8.0.25",
 
   // google calendar

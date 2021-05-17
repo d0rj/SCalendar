@@ -48,17 +48,10 @@ class UserCalendarApi(calendarService: CalendarService) {
         repeating = repeating,
         date = date,
         location = location,
-        completed = false,
         duration = duration.toLong
       )
 
       complete(calendarService.newEvent(newEvent))
-    }
-  }
-
-  private val endEvent = path("events" / """.*""".r / "end") {
-    eventId => post {
-      complete(calendarService.completeEvent(eventId))
     }
   }
 
@@ -74,12 +67,12 @@ class UserCalendarApi(calendarService: CalendarService) {
     }
   }
 
-//  private val syncWithGoogle = path("events" / "sync" / "google" & parameter("calendarId")) {
-//    get {
-//
-//    }
-//  }
+  private val syncWithGoogle = (path("events" / "sync" / "google") & parameter("calendarId")) { calendarId =>
+    get {
+      complete(calendarService.synchronize(calendarId, None, None))
+    }
+  }
 
   def route: Route =
-    findBetween ~ addNew ~ endEvent ~ deleteEvent ~ moveEvent
+    findBetween ~ addNew ~ deleteEvent ~ moveEvent ~ syncWithGoogle
 }

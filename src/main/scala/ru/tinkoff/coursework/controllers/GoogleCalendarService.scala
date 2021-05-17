@@ -101,9 +101,6 @@ class GoogleCalendarService extends CalendarService {
     )
 
 
-  override def completeEvent(eventId: String): Future[Boolean] = Future.successful(false)
-
-
   override def removeEvent(eventId: String): Future[Boolean] =
     if (eventId.isEmpty)
       Future.successful(false)
@@ -135,4 +132,8 @@ class GoogleCalendarService extends CalendarService {
         case _ @ (_: IOException | _: GoogleJsonResponseException) => false
       }
     })
+
+  override def synchronize(calendarId: String, from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean] = {
+    Future.successful(false)
+  }
 }

@@ -33,9 +33,7 @@ object GoogleEventConverter extends EventConverter[Event] {
       kind = anotherEvent.getKind,
       duration = anotherEvent.getEnd.getDate.getValue - anotherEvent.getStart.getDate.getValue,
       location = Option(anotherEvent.getLocation),
-      repeating = anotherEvent.getEndTimeUnspecified,
-      completed = if (anotherEvent.getEndTimeUnspecified) false
-                else (anotherEvent.getEnd.getDate.getValue - System.currentTimeMillis()) == 0
+      repeating = anotherEvent.getEndTimeUnspecified
     )
 
 
