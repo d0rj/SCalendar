@@ -5,12 +5,15 @@ import ru.tinkoff.coursework.controllers.CalendarService
 import akka.http.scaladsl.server.Route
 import ru.tinkoff.coursework.storage.Event
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 
 import java.sql.Timestamp
+import scala.concurrent.duration.Duration
+import scala.concurrent.Await
 
 
-class UserCalendarApi(calendarService: CalendarService) {
+class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService) {
   import akka.http.scaladsl.server.Directives._
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
@@ -55,11 +58,37 @@ class UserCalendarApi(calendarService: CalendarService) {
     }
   }
 
-  private val deleteEvent = path("events" / """.*""".r / "delete") {
-    eventId => post {
+  private val deleteEvent = path("events" / """.*""".r) {
+    eventId => delete {
       complete(calendarService.removeEvent(eventId))
     }
   }
+
+
+  private val updateEvent = (path("events" / """.*""".r / "update")
+    & parameter("title".?)
+    & parameter("summary".?)
+    & parameter("repeating".as[Boolean].?)
+    & parameter("location".?)) {
+    (eventId, title, summary, repeating, location) => put {
+      val oldEvent = Await.result(calendarService.getEvent(eventId), Duration.Inf)
+      val newEvent = oldEvent match {
+        case None => throw new EventNotFoundException
+        case Some(event) => event.copy(
+            title = title getOrElse event.title,
+            summary = summary getOrElse event.summary,
+            repeating = repeating getOrElse event.repeating,
+            location = location
+        )
+      }
+
+      if (newEvent.kind == "calendar#event")
+        complete(googleCalendarService.updateEvent(eventId, newEvent))
+
+      complete(calendarService.updateEvent(eventId, newEvent))
+    }
+  }
+
 
   private val moveEvent = (path("events" / """.*""".r / "move") & parameter("newDate".as(stringToTimestamp))) {
     (eventId, newDate) => post {
@@ -67,12 +96,12 @@ class UserCalendarApi(calendarService: CalendarService) {
     }
   }
 
-  private val syncWithGoogle = (path("events" / "sync" / "google") & parameter("calendarId")) { calendarId =>
-    get {
+  private val syncWithGoogle = (path("events" / "sync" / "google") & parameter("calendarId")) {
+    calendarId => post {
       complete(calendarService.synchronize(calendarId, None, None))
     }
   }
 
   def route: Route =
-    findBetween ~ addNew ~ deleteEvent ~ moveEvent ~ syncWithGoogle
+    findBetween ~ addNew ~ deleteEvent ~ moveEvent ~ syncWithGoogle ~ updateEvent
 }

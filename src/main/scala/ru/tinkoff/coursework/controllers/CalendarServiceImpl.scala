@@ -16,6 +16,10 @@ class CalendarServiceImpl extends CalendarService {
   Await.result(db.run(EventsQueryRepository.AllEvents.schema.createIfNotExists), Duration.Inf)
 
 
+  override def getEvent(eventId: String): Future[Option[Event]] =
+    db.run(EventsQueryRepository.getEvent(eventId))
+
+
   override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] =
     db.run(EventsQueryRepository.between(from, to))
 
@@ -34,6 +38,19 @@ class CalendarServiceImpl extends CalendarService {
         case 0 => false
         case _ => true
       }
+
+
+  override def updateEvent(eventId: String, updated: Event): Future[Boolean] = {
+    val query: Seq[DBIO[Int]] = Seq(
+      EventsQueryRepository.changeTitle(_, updated.title),
+      EventsQueryRepository.changeSummary(_, updated.summary),
+      EventsQueryRepository.changeLocation(_, updated.location),
+      EventsQueryRepository.changeRepeating(_, updated.repeating)
+    ).map { _(eventId) }
+    db.run(DBIO.sequence(query))
+      .map { _.sum }
+      .map { _ >= 4 }
+  }
 
 
   override def removeEvent(eventId: String): Future[Boolean] = {

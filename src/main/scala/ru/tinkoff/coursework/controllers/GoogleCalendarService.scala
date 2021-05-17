@@ -28,7 +28,7 @@ class GoogleCalendarService extends CalendarService {
   private val TOKENS_DIRECTORY_PATH = "tokens"
 
   private val SCOPES = Collections.singletonList(CalendarScopes.CALENDAR)
-  private val CREDENTIALS_FILE_PATH = "credentials.json"
+  private val CREDENTIALS_FILE_PATH = "/credentials.json"
 
   private val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport
 
@@ -58,6 +58,12 @@ class GoogleCalendarService extends CalendarService {
 
     new AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
   }
+
+
+  override def getEvent(eventId: String): Future[Option[Event]] =
+    Future.successful(Some(
+      convert(service.events().get("primary", eventId).execute())
+    ))
 
 
   override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] =
@@ -99,6 +105,13 @@ class GoogleCalendarService extends CalendarService {
         case _ => true
       }
     )
+
+
+  override def updateEvent(eventId: String, updated: Event): Future[Boolean] =
+    Future.successful({
+      val lastUpdated = service.events().get("primary", eventId).execute().getUpdated
+      service.events().update("primary", eventId, convert(updated)).execute().getUpdated != lastUpdated
+    })
 
 
   override def removeEvent(eventId: String): Future[Boolean] =
