@@ -14,6 +14,9 @@ object EventsQueryRepository {
   private def eventById(id: String): Query[EventsTable, Event, Seq] =
     AllEvents.filter { _.eventId === id }
 
+  def all: DIO[Seq[Event], Effect.Read] =
+    AllEvents.result
+
   def changeDatetime(id: String, timestamp: Timestamp): DIO[Int, Effect.Write] =
     eventById(id)
       .map { _.date }
