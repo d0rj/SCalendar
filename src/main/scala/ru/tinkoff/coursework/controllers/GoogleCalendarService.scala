@@ -14,12 +14,11 @@ import ru.tinkoff.coursework.ServiceException
 import ru.tinkoff.coursework.logic.GoogleEventConverter
 import ru.tinkoff.coursework.storage.Event
 
-import java.io.{File, IOException, InputStreamReader}
+import java.io.{File, FileNotFoundException, IOException, InputStreamReader}
 import java.sql.Timestamp
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.util.Using.resource
 
 
 class GoogleCalendarService()(implicit ec: ExecutionContext) extends CalendarService with ThirdPartyService {
@@ -46,8 +45,11 @@ class GoogleCalendarService()(implicit ec: ExecutionContext) extends CalendarSer
 
 
   private def authorize(httpTransport: NetHttpTransport): Credential = {
-    val in = resource(getClass.getResourceAsStream(CREDENTIALS_FILE_PATH))(identity)
-    val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, resource(new InputStreamReader(in))(identity))
+    val in = Option(getClass.getResourceAsStream(CREDENTIALS_FILE_PATH))
+    if (in.isEmpty)
+      throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH)
+    val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in.get))
+
 
     val flow = new GoogleAuthorizationCodeFlow.Builder(
       httpTransport,

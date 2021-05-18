@@ -6,6 +6,8 @@ import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
 import ru.tinkoff.coursework.api.{CalendarExceptionHandler, UserCalendarApi}
 import ru.tinkoff.coursework.controllers.{CalendarService, CalendarServiceImpl, GoogleCalendarService, ThirdPartyService}
+import ru.tinkoff.coursework.logic.Config
+import ru.tinkoff.coursework.storage.DatabaseMigrationManager
 import slick.jdbc.MySQLProfile.api.Database
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,6 +16,15 @@ import scala.concurrent.{ExecutionContext, Future}
 object CalendarHttpApp extends App {
   implicit val ac: ActorSystem = ActorSystem()
   implicit val ec: ExecutionContext = ac.dispatcher
+
+  val config = Config.load()
+  config.map { cfg =>
+    new DatabaseMigrationManager(
+      cfg.mysqlDB.url,
+      cfg.mysqlDB.user,
+      cfg.mysqlDB.password
+    ).migrateDatabaseSchema()
+  }
 
 
   CalendarServiceMain().start()

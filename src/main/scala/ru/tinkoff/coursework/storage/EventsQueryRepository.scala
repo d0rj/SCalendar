@@ -11,8 +11,6 @@ import scala.concurrent.ExecutionContext
 object EventsQueryRepository {
   val AllEvents = TableQuery[EventsTable]
 
-  Database.forConfig("mysqlDB").run(AllEvents.schema.createIfNotExists)
-
 
   private def eventById(id: String): Query[EventsTable, Event, Seq] =
     AllEvents.filter { _.eventId === id }

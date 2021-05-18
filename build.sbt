@@ -29,4 +29,9 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.google.api-client" % "google-api-client-java6" % "1.20.0",
   "com.google.oauth-client" % "google-oauth-client-jetty" % "1.20.0",
   "com.google.apis" % "google-api-services-oauth2" % "v2-rev91-1.20.0",
+
+  // migration
+  "org.flywaydb" % "flyway-core" % "4.2.0",
+  "org.hsqldb" % "hsqldb" % "2.5.0",
+  "com.github.pureconfig" %% "pureconfig" % "0.15.0",
 )
