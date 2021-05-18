@@ -10,7 +10,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.calendar.{Calendar, CalendarScopes}
-import ru.tinkoff.coursework.{EventNotFoundException, ServiceException}
+import ru.tinkoff.coursework.ServiceException
 import ru.tinkoff.coursework.logic.GoogleEventConverter
 import ru.tinkoff.coursework.storage.Event
 

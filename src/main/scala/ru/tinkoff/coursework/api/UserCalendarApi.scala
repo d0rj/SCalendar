@@ -5,10 +5,12 @@ import ru.tinkoff.coursework.controllers.{CalendarService, ThirdPartyService}
 import akka.http.scaladsl.server.Route
 import ru.tinkoff.coursework.storage.Event
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import ru.tinkoff.coursework.EventNotFoundException
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import ru.tinkoff.coursework.{EventNotFoundException, ServiceException}
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 import slick.jdbc.MySQLProfile.api.Database
 
+import java.io.IOException
 import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -74,12 +76,15 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
       val oldEvent = calendarService.getEvent(eventId)
       val newEvent = oldEvent.flatMap {
         case None => Future.failed(new EventNotFoundException)
-        case Some(event) => Future.successful(event.copy(
+        case Some(event) => Future(event.copy(
             title = title getOrElse event.title,
             summary = summary getOrElse event.summary,
             repeating = repeating getOrElse event.repeating,
             location = location
         ))
+          .recoverWith {
+            case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new ServiceException)
+          }
       }
 
       val updates: Seq[Future[Unit]] = Seq(

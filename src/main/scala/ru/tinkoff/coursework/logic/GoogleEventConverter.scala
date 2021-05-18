@@ -8,10 +8,11 @@ import java.sql.Timestamp
 
 
 object GoogleEventConverter extends EventConverter[Event] {
-  implicit def eventDateTimeToTimestamp(eventDateTime: EventDateTime): Timestamp = eventDateTime.getDate match {
-    case null => new Timestamp(eventDateTime.getDateTime.getValue)
-    case some => new Timestamp(some.getValue)
-  }
+  implicit def eventDateTimeToTimestamp(eventDateTime: EventDateTime): Timestamp =
+    if (Option(eventDateTime.getDate).isDefined)
+      new Timestamp(eventDateTime.getDate.getValue)
+    else
+      new Timestamp(eventDateTime.getDateTime.getValue)
 
 
   implicit def timestampToDateTime(timestamp: Timestamp): DateTime =
@@ -28,24 +29,19 @@ object GoogleEventConverter extends EventConverter[Event] {
     new storage.Event(
       id = anotherEvent.getId,
       title = anotherEvent.getSummary,
-      summary = anotherEvent.getDescription match {
-        case null => ""
-        case _ => anotherEvent.getDescription
-      },
+      summary = Option(anotherEvent.getDescription).getOrElse(""),
       date = anotherEvent.getStart,
       kind = anotherEvent.getKind,
-      duration = anotherEvent.getEnd.getDate match {
-        case null => anotherEvent.getEnd.getDateTime.getValue - anotherEvent.getStart.getDateTime.getValue
-        case _ => anotherEvent.getEnd.getDate.getValue - anotherEvent.getStart.getDate.getValue
-      },
-      location = anotherEvent.getLocation match {
-        case null => None
-        case _ => Option(anotherEvent.getLocation)
-      },
-      repeating = anotherEvent.getEndTimeUnspecified match {
-        case null => false
-        case _ => anotherEvent.getEndTimeUnspecified
-      }
+      duration =
+        if (Option(anotherEvent.getEnd.getDate).isDefined)
+          anotherEvent.getEnd.getDate.getValue - anotherEvent.getStart.getDate.getValue
+        else
+          anotherEvent.getEnd.getDateTime.getValue - anotherEvent.getStart.getDateTime.getValue,
+      location =
+        if (Option(anotherEvent.getLocation).isDefined)
+          Option(anotherEvent.getLocation)
+        else None,
+      repeating = anotherEvent.getEndTimeUnspecified
     )
 
 
