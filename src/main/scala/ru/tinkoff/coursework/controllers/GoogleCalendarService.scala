@@ -64,14 +64,20 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
   }
 
 
+  private def handleErrors[T]: PartialFunction[Throwable, Future[T]] = {
+    case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new ServiceException)
+  }
+
+
   override def getEvent(eventId: String): Future[Option[Event]] =
-    Future.successful(Some(
+    Future(Some(
       convert(service.events().get("primary", eventId).execute())
     ))
+      .recoverWith { handleErrors }
 
 
   override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] =
-    Future.successful(service.events().list("primary")
+    Future(service.events().list("primary")
       .setTimeMin(from)
       .setTimeMax(to)
       .setOrderBy("startTime")
@@ -79,10 +85,11 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
       .execute
       .getItems.asScala.toSeq.map { convert }
     )
+      .recoverWith { handleErrors }
 
 
   override def later(from: Timestamp): Future[Seq[Event]] =
-    Future.successful(
+    Future(
       service.events().list("primary")
         .setTimeMin(from)
         .setOrderBy("startTime")
@@ -90,10 +97,11 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
         .execute()
         .getItems.asScala.toSeq.map { convert }
     )
+      .recoverWith { handleErrors }
 
 
   override def earlier(to: Timestamp): Future[Seq[Event]] =
-    Future.successful(
+    Future(
       service.events().list("primary")
         .setTimeMax(to)
         .setOrderBy("startTime")
@@ -101,13 +109,12 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
         .execute()
         .getItems.asScala.toSeq.map { convert }
     )
+      .recoverWith { handleErrors }
 
 
   override def newEvent(event: Event): Future[Unit] =
     Future(service.events().insert("primary", GoogleEventConverter.convert(event)).execute())
-      .recoverWith {
-        case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new ServiceException)
-      }
+      .recoverWith { handleErrors }
       .map { _ => () }
 
 
@@ -122,9 +129,7 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
 
   override def removeEvent(eventId: String): Future[Unit] =
     Future(service.events().delete("primary", eventId).execute())
-      .recoverWith {
-        case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new EventNotFoundException)
-      }
+      .recoverWith { handleErrors }
       .map { _ => () }
 
 
@@ -138,9 +143,7 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
       newStart = new Timestamp(to.getValue + duration)
       r <- Future(service.events().update("primary", eventId, event.setStart(newStart).setEnd(newEnd)).execute())
     } yield r)
-      .recoverWith {
-        case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new EventNotFoundException)
-      }
+      .recoverWith { handleErrors }
       .map { _ => () }
   }
 }
