@@ -5,12 +5,9 @@ import ru.tinkoff.coursework.controllers.{CalendarService, ThirdPartyService}
 import akka.http.scaladsl.server.Route
 import ru.tinkoff.coursework.storage.Event
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import com.google.api.client.googleapis.json.GoogleJsonResponseException
-import ru.tinkoff.coursework.ServiceException
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 import slick.jdbc.MySQLProfile.api.Database
 
-import java.io.IOException
 import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -75,28 +72,22 @@ class UserCalendarApi(calendarService: CalendarService,
     & parameter("repeating".as[Boolean].?)
     & parameter("location".?)) {
     (eventId, title, summary, repeating, location) => put {
-      val oldEvent = calendarService.getEvent(eventId)
-      val newEvent = oldEvent.map { event => event.copy(
-            title = title getOrElse event.title,
-            summary = summary getOrElse event.summary,
-            repeating = repeating getOrElse event.repeating,
-            location = location
-        )}
-          .recoverWith {
-            case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new ServiceException)
-          }
+      def v(): Future[Unit] = for {
+        event <- calendarService.getEvent(eventId)
+        newEvent = event.copy(
+          title = title getOrElse event.title,
+          summary = summary getOrElse event.summary,
+          repeating = repeating getOrElse event.repeating,
+          location = location
+        )
+        _ <- if (newEvent.kind == "calendar#event")
+          googleCalendarService.updateEvent(eventId, newEvent)
+        else
+          Future.successful(())
+        _ <- calendarService.updateEvent(eventId, newEvent)
+      } yield ()
 
-      val updates: Seq[Future[Unit]] = Seq(
-        newEvent.flatMap { e =>
-          if (e.kind == "calendar#event")
-            googleCalendarService.updateEvent(eventId, e)
-          else
-            Future.successful(())
-        },
-        newEvent.flatMap { calendarService.updateEvent(eventId, _) }
-      )
-
-      complete(Future.sequence(updates).map { identity })
+      complete(v())
     }
   }
 
