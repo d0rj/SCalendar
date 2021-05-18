@@ -119,9 +119,9 @@ class GoogleCalendarService()(implicit ec: ExecutionContext) extends CalendarSer
   override def updateEvent(eventId: String, updated: Event): Future[Unit] = {
     val lastUpdated = service.events().get("primary", eventId).execute().getUpdated
     if (service.events().update("primary", eventId, convert(updated)).execute().getUpdated != lastUpdated)
-      Future.failed(new ServiceException)
-    else
       Future.successful(())
+    else
+      Future.failed(new ServiceException)
   }
 
 
