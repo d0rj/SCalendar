@@ -45,10 +45,10 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
 
 
   private def authorize(httpTransport: NetHttpTransport): Credential = {
-    val in = getClass.getResourceAsStream(CREDENTIALS_FILE_PATH)
-    if (in == null)
+    val in = Option(getClass.getResourceAsStream(CREDENTIALS_FILE_PATH))
+    if (in.isEmpty)
       throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH)
-    val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in))
+    val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in.get))
 
     val flow = new GoogleAuthorizationCodeFlow.Builder(
       httpTransport,
