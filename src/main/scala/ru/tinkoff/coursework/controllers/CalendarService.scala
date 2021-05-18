@@ -7,7 +7,7 @@ import scala.concurrent.Future
 
 
 trait CalendarService {
-  def getEvent(eventId: String): Future[Option[Event]]
+  def getEvent(eventId: String): Future[Event]
 
   def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]]
 

@@ -25,7 +25,7 @@ case class CalendarServiceMain()(implicit ac: ActorSystem, ec: ExecutionContext)
   private val mainDB = Database.forConfig("mysqlDB")
   private val calendarService: CalendarService = new CalendarServiceImpl(mainDB)
   private val googleCalendarService: CalendarService with ThirdPartyService = new GoogleCalendarService
-  private val userCalendarApi: UserCalendarApi = new UserCalendarApi(calendarService, googleCalendarService)(mainDB, ec)
+  private val userCalendarApi: UserCalendarApi = new UserCalendarApi(calendarService, googleCalendarService, mainDB)
   private val routes = Route.seal(userCalendarApi.route)(exceptionHandler = CalendarExceptionHandler.exceptionHandler)
 
 

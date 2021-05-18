@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import ru.tinkoff.coursework.storage.Event
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
-import ru.tinkoff.coursework.{EventNotFoundException, ServiceException}
+import ru.tinkoff.coursework.ServiceException
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 import slick.jdbc.MySQLProfile.api.Database
 
@@ -15,8 +15,10 @@ import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService with ThirdPartyService)
-                     (implicit db: Database, ec: ExecutionContext){
+class UserCalendarApi(calendarService: CalendarService,
+                      googleCalendarService: CalendarService with ThirdPartyService,
+                      db: Database)
+                     (implicit ec: ExecutionContext) {
   import akka.http.scaladsl.server.Directives._
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
@@ -74,27 +76,24 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
     & parameter("location".?)) {
     (eventId, title, summary, repeating, location) => put {
       val oldEvent = calendarService.getEvent(eventId)
-      val newEvent = oldEvent.flatMap {
-        case None => Future.failed(new EventNotFoundException)
-        case Some(event) => Future(event.copy(
+      val newEvent = oldEvent.map { event => event.copy(
             title = title getOrElse event.title,
             summary = summary getOrElse event.summary,
             repeating = repeating getOrElse event.repeating,
             location = location
-        ))
+        )}
           .recoverWith {
             case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new ServiceException)
           }
-      }
 
       val updates: Seq[Future[Unit]] = Seq(
         newEvent.flatMap { e =>
           if (e.kind == "calendar#event")
-            googleCalendarService.updateEvent(eventId, e).map { _ => () }
+            googleCalendarService.updateEvent(eventId, e)
           else
             Future.successful(())
         },
-        newEvent.map { calendarService.updateEvent(eventId, _) }.map { _ => () }
+        newEvent.flatMap { calendarService.updateEvent(eventId, _) }
       )
 
       complete(Future.sequence(updates).map { identity })
@@ -112,7 +111,7 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
     & parameter("from".as(stringToTimestamp).?)
     & parameter("to".as(stringToTimestamp).?)) {
       (from, to) => post {
-        complete(googleCalendarService.synchronize(from, to))
+        complete(googleCalendarService.synchronize(from, to, db))
       }
   }
 

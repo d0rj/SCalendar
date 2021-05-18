@@ -9,8 +9,12 @@ import slick.jdbc.MySQLProfile.api.Database
 
 
 class CalendarServiceImpl(db: Database)(implicit ec: ExecutionContext) extends CalendarService {
-  override def getEvent(eventId: String): Future[Option[Event]] =
+  override def getEvent(eventId: String): Future[Event] =
     db.run(EventsQueryRepository.getEvent(eventId))
+      .flatMap {
+        case Some(value) => Future.successful(value)
+        case None => Future.failed(new EventNotFoundException)
+      }
 
 
   override def allBetween(from: Timestamp, to: Timestamp): Future[Seq[Event]] =

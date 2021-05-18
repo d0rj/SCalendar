@@ -11,13 +11,13 @@ import slick.jdbc.MySQLProfile.api.Database
 trait ThirdPartyService {
   this: CalendarService =>
 
-  def synchronize(from: Option[Timestamp], to: Option[Timestamp])
-                 (implicit db: Database, ec: ExecutionContext): Future[Unit] = {
+  def synchronize(from: Option[Timestamp], to: Option[Timestamp], db: Database)
+                 (implicit ec: ExecutionContext): Future[Unit] = {
     val events = (from, to) match {
       case (Some(left), Some(right)) => allBetween(left, right)
       case (Some(left), None) => later(left)
       case (None, Some(right)) => earlier(right)
-      case (None, None) => throw new IllegalArgumentException
+      case (None, None) => Future.failed(new IllegalArgumentException)
     }
 
     db.run(EventsQueryRepository.all)

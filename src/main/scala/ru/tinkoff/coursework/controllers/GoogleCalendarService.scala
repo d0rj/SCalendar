@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 
-class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarService with ThirdPartyService {
+class GoogleCalendarService()(implicit ec: ExecutionContext) extends CalendarService with ThirdPartyService {
   import ru.tinkoff.coursework.logic.GoogleEventConverter._
   import scala.jdk.CollectionConverters._
 
@@ -69,10 +69,8 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
   }
 
 
-  override def getEvent(eventId: String): Future[Option[Event]] =
-    Future(Some(
-      convert(service.events().get("primary", eventId).execute())
-    ))
+  override def getEvent(eventId: String): Future[Event] =
+    Future(convert(service.events().get("primary", eventId).execute()))
       .recoverWith { handleErrors }
 
 
@@ -139,7 +137,7 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
       ifEmpty = event.getEnd.getDateTime.getValue - event.getStart.getDateTime.getValue
       ifNotEmpty = event.getEnd.getDate.getValue - event.getStart.getDate.getValue
       duration = Try(event.getStart.getDate).toOption.fold(ifEmpty)(_ => ifNotEmpty)
-      newEnd = new Timestamp(to.getValue + duration)
+      newEnd = new Timestamp(to.getValue)
       newStart = new Timestamp(to.getValue + duration)
       r <- Future(service.events().update("primary", eventId, event.setStart(newStart).setEnd(newEnd)).execute())
     } yield r)
