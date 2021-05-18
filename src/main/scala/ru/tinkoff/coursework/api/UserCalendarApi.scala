@@ -10,8 +10,7 @@ import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 import slick.jdbc.MySQLProfile.api.Database
 
 import java.sql.Timestamp
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService with ThirdPartyService)
@@ -72,23 +71,25 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
     & parameter("repeating".as[Boolean].?)
     & parameter("location".?)) {
     (eventId, title, summary, repeating, location) => put {
-      val oldEvent = Await.result(calendarService.getEvent(eventId), Duration.Inf)
-      val newEvent = oldEvent match {
-        case None => throw new EventNotFoundException
-        case Some(event) => event.copy(
+      val oldEvent = calendarService.getEvent(eventId)
+      val newEvent = oldEvent.flatMap {
+        case None => Future.failed(new EventNotFoundException)
+        case Some(event) => Future.successful(event.copy(
             title = title getOrElse event.title,
             summary = summary getOrElse event.summary,
             repeating = repeating getOrElse event.repeating,
             location = location
-        )
+        ))
       }
 
       val updates: Seq[Future[Unit]] = Seq(
-        if (newEvent.kind == "calendar#event")
-          googleCalendarService.updateEvent(eventId, newEvent)
-        else
-          Future.successful(()),
-        calendarService.updateEvent(eventId, newEvent)
+        newEvent.flatMap { e =>
+          if (e.kind == "calendar#event")
+            googleCalendarService.updateEvent(eventId, e).map { _ => () }
+          else
+            Future.successful(())
+        },
+        newEvent.map { calendarService.updateEvent(eventId, _) }.map { _ => () }
       )
 
       complete(Future.sequence(updates).map { identity })
