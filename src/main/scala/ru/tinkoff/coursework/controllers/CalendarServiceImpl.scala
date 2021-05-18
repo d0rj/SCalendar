@@ -10,8 +10,6 @@ import slick.jdbc.MySQLProfile.api._
 class CalendarServiceImpl(implicit ec: ExecutionContext) extends CalendarService {
   private val db = Database.forConfig("mysqlDB")
 
-  db.run(EventsQueryRepository.AllEvents.schema.createIfNotExists)
-
 
   override def getEvent(eventId: String): Future[Option[Event]] =
     db.run(EventsQueryRepository.getEvent(eventId))

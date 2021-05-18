@@ -5,11 +5,13 @@ import slick.dbio.Effect
 import slick.jdbc.MySQLProfile.api._
 
 import java.sql.Timestamp
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 
 object EventsQueryRepository {
   val AllEvents = TableQuery[EventsTable]
+
+  Database.forConfig("mysqlDB").run(AllEvents.schema.createIfNotExists)
 
 
   private def eventById(id: String): Query[EventsTable, Event, Seq] =
@@ -59,7 +61,7 @@ object EventsQueryRepository {
     AllEvents += event
 
 
-  def addEvents(events: Seq[Event]): DBIOAction[Int, NoStream, Effect.Write] =
+  def addEvents(events: Seq[Event])(implicit ex: ExecutionContext): DBIOAction[Int, NoStream, Effect.Write] =
     (AllEvents ++= events).map { _.sum }
 
 
