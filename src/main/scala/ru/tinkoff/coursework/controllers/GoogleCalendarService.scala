@@ -32,6 +32,7 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
 
   private val SCOPES = Collections.singletonList(CalendarScopes.CALENDAR)
   private val CREDENTIALS_FILE_PATH = "/credentials.json"
+  private val USER_ID = "user"
 
   private val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport
 
@@ -59,7 +60,7 @@ class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarServi
       .build
     val receiver = new LocalServerReceiver.Builder().setPort(8888).build
 
-    new AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
+    new AuthorizationCodeInstalledApp(flow, receiver).authorize(USER_ID)
   }
 
 
