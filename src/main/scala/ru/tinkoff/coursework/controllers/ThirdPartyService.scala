@@ -1,24 +1,24 @@
 package ru.tinkoff.coursework.controllers
 
 import ru.tinkoff.coursework.storage.EventsQueryRepository
+import slick.dbio.DBIO
 
 import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.MySQLProfile.api.Database
 
 
 trait ThirdPartyService {
   this: CalendarService =>
 
-  def synchronize(from: Option[Timestamp], to: Option[Timestamp])(implicit ec: ExecutionContext): Future[Unit] = {
+  def synchronize(from: Option[Timestamp], to: Option[Timestamp])
+                 (implicit db: Database, ec: ExecutionContext): Future[Unit] = {
     val events = (from, to) match {
       case (Some(left), Some(right)) => allBetween(left, right)
       case (Some(left), None) => later(left)
       case (None, Some(right)) => earlier(right)
       case (None, None) => throw new IllegalArgumentException
     }
-
-    val db = Database.forConfig("mysqlDB")
 
     db.run(EventsQueryRepository.all)
       .flatMap { allEvents =>

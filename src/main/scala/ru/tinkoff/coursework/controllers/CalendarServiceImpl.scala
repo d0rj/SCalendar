@@ -1,16 +1,14 @@
 package ru.tinkoff.coursework.controllers
 import ru.tinkoff.coursework.{EventNotFoundException, EventsConflictException}
 import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
+import slick.dbio.DBIO
 
 import java.sql.Timestamp
 import scala.concurrent.{ExecutionContext, Future}
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.MySQLProfile.api.Database
 
 
-class CalendarServiceImpl(implicit ec: ExecutionContext) extends CalendarService {
-  private val db = Database.forConfig("mysqlDB")
-
-
+class CalendarServiceImpl(db: Database)(implicit ec: ExecutionContext) extends CalendarService {
   override def getEvent(eventId: String): Future[Option[Event]] =
     db.run(EventsQueryRepository.getEvent(eventId))
 

@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
 import ru.tinkoff.coursework.api.{CalendarExceptionHandler, UserCalendarApi}
 import ru.tinkoff.coursework.controllers.{CalendarService, CalendarServiceImpl, GoogleCalendarService, ThirdPartyService}
+import slick.jdbc.MySQLProfile.api.Database
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,9 +22,10 @@ object CalendarHttpApp extends App {
 
 case class CalendarServiceMain()(implicit ac: ActorSystem, ec: ExecutionContext) extends LazyLogging {
 
-  private val calendarService: CalendarService = new CalendarServiceImpl()
+  private val mainDB = Database.forConfig("mysqlDB")
+  private val calendarService: CalendarService = new CalendarServiceImpl(mainDB)
   private val googleCalendarService: CalendarService with ThirdPartyService = new GoogleCalendarService
-  private val userCalendarApi: UserCalendarApi = new UserCalendarApi(calendarService, googleCalendarService)
+  private val userCalendarApi: UserCalendarApi = new UserCalendarApi(calendarService, googleCalendarService)(mainDB, ec)
   private val routes = Route.seal(userCalendarApi.route)(exceptionHandler = CalendarExceptionHandler.exceptionHandler)
 
 

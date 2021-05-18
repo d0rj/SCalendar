@@ -7,6 +7,7 @@ import ru.tinkoff.coursework.storage.Event
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
+import slick.jdbc.MySQLProfile.api.Database
 
 import java.sql.Timestamp
 import scala.concurrent.duration.Duration
@@ -14,7 +15,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService with ThirdPartyService)
-                     (implicit ec: ExecutionContext){
+                     (implicit db: Database, ec: ExecutionContext){
   import akka.http.scaladsl.server.Directives._
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
