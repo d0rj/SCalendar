@@ -15,11 +15,11 @@ trait CalendarService {
 
   def earlier(to: Timestamp): Future[Seq[Event]]
 
-  def newEvent(event: Event): Future[Boolean]
+  def newEvent(event: Event): Future[Unit]
 
-  def updateEvent(eventId: String, updated: Event): Future[Boolean]
+  def updateEvent(eventId: String, updated: Event): Future[Unit]
 
-  def removeEvent(eventId: String): Future[Boolean]
+  def removeEvent(eventId: String): Future[Unit]
 
-  def moveEvent(eventId: String, to: Timestamp): Future[Boolean]
+  def moveEvent(eventId: String, to: Timestamp): Future[Unit]
 }

@@ -7,19 +7,15 @@ import com.typesafe.scalalogging.LazyLogging
 import ru.tinkoff.coursework.api.{CalendarExceptionHandler, UserCalendarApi}
 import ru.tinkoff.coursework.controllers.{CalendarService, CalendarServiceImpl, GoogleCalendarService, ThirdPartyService}
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 
-object CalendarHttpApp {
+object CalendarHttpApp extends App {
   implicit val ac: ActorSystem = ActorSystem()
   implicit val ec: ExecutionContext = ac.dispatcher
 
 
-  def main(args: Array[String]): Unit = {
-    Await.result(CalendarServiceMain().start(), Duration.Inf)
-    ()
-  }
+  CalendarServiceMain().start()
 }
 
 

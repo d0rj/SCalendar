@@ -8,6 +8,9 @@ final case class EventNotFoundException(message: String = "Event not found") ext
 final case class EventsConflictException(message: String = "Time of the event is incompatible with the previous")
   extends CalendarException(message)
 
+final case class ServiceException(message: String = "Third-party service internal error")
+  extends CalendarException(message)
+
 
 sealed abstract class CalendarWarning(message: String) extends Exception(message)
 

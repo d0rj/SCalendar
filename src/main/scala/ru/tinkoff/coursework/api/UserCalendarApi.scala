@@ -82,15 +82,15 @@ class UserCalendarApi(calendarService: CalendarService, googleCalendarService: C
         )
       }
 
-      val updates = Seq(
+      val updates: Seq[Future[Unit]] = Seq(
         if (newEvent.kind == "calendar#event")
           googleCalendarService.updateEvent(eventId, newEvent)
         else
-          Future.successful(true),
+          Future.successful(()),
         calendarService.updateEvent(eventId, newEvent)
       )
 
-      complete(Future.sequence(updates).map { _.forall(identity) })
+      complete(Future.sequence(updates).map { identity })
     }
   }
 

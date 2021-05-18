@@ -10,14 +10,16 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.calendar.{Calendar, CalendarScopes}
-import ru.tinkoff.coursework.EventNotFoundException
+import ru.tinkoff.coursework.{EventNotFoundException, ServiceException}
 import ru.tinkoff.coursework.logic.GoogleEventConverter
 import ru.tinkoff.coursework.storage.Event
 
 import java.io.{File, FileNotFoundException, IOException, InputStreamReader}
 import java.sql.Timestamp
 import java.util.Collections
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Try
 
 
 class GoogleCalendarService extends CalendarService with ThirdPartyService {
@@ -101,51 +103,44 @@ class GoogleCalendarService extends CalendarService with ThirdPartyService {
     )
 
 
-  override def newEvent(event: Event): Future[Boolean] =
-    Future.successful(
-      service.events().insert("primary", GoogleEventConverter.convert(event)).execute().getHtmlLink match {
-        case null => false
-        case _ => true
+  override def newEvent(event: Event): Future[Unit] =
+    Future(service.events().insert("primary", GoogleEventConverter.convert(event)).execute())
+      .recoverWith {
+        case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new ServiceException)
       }
-    )
+      .map { _ => () }
 
 
-  override def updateEvent(eventId: String, updated: Event): Future[Boolean] =
-    Future.successful({
-      val lastUpdated = service.events().get("primary", eventId).execute().getUpdated
-      service.events().update("primary", eventId, convert(updated)).execute().getUpdated != lastUpdated
-    })
+  override def updateEvent(eventId: String, updated: Event): Future[Unit] = {
+    val lastUpdated = service.events().get("primary", eventId).execute().getUpdated
+    if (service.events().update("primary", eventId, convert(updated)).execute().getUpdated != lastUpdated)
+      Future.failed(new ServiceException)
+    else
+      Future.successful(())
+  }
 
 
-  override def removeEvent(eventId: String): Future[Boolean] =
-      Future.successful(
-        try {
-          service.events().delete("primary", eventId).execute()
-          true
-        } catch {
-          case _ @ (_: IOException | _: GoogleJsonResponseException) => throw new EventNotFoundException
-        }
-      )
-
-
-  override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] =
-    Future.successful({
-      val event = service.events().get("primary", eventId).execute() match {
-        case null => throw new EventNotFoundException
-        case e => e
+  override def removeEvent(eventId: String): Future[Unit] =
+    Future(service.events().delete("primary", eventId).execute())
+      .recoverWith {
+        case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new EventNotFoundException)
       }
-      val duration = event.getStart.getDate match {
-        case null => event.getEnd.getDateTime.getValue - event.getStart.getDateTime.getValue
-        case _ => event.getEnd.getDate.getValue - event.getStart.getDate.getValue
-      }
-      val newEnd = new Timestamp(to.getValue + duration)
-      val newStart = new Timestamp(to.getValue + duration)
+      .map { _ => () }
 
-      try {
-        service.events().update("primary", eventId, event.setStart(newStart).setEnd(newEnd)).execute()
-        true
-      } catch {
-        case _ @ (_: IOException | _: GoogleJsonResponseException) => throw new EventNotFoundException
+
+  override def moveEvent(eventId: String, to: Timestamp): Future[Unit] = {
+    (for {
+      event <- Future(service.events().get("primary", eventId).execute())
+      ifEmpty = event.getEnd.getDateTime.getValue - event.getStart.getDateTime.getValue
+      ifNotEmpty = event.getEnd.getDate.getValue - event.getStart.getDate.getValue
+      duration = Try(event.getStart.getDate).toOption.fold(ifEmpty)(_ => ifNotEmpty)
+      newEnd = new Timestamp(to.getValue + duration)
+      newStart = new Timestamp(to.getValue + duration)
+      r <- Future(service.events().update("primary", eventId, event.setStart(newStart).setEnd(newEnd)).execute())
+    } yield r)
+      .recoverWith {
+        case _@(_: IOException | _: GoogleJsonResponseException) => Future.failed(new EventNotFoundException)
       }
-    })
+      .map { _ => () }
+  }
 }

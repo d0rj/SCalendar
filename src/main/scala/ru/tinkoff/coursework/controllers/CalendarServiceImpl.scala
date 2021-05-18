@@ -32,12 +32,12 @@ class CalendarServiceImpl extends CalendarService {
     db.run(EventsQueryRepository.earlier(to))
 
 
-  override def newEvent(event: Event): Future[Boolean] =
+  override def newEvent(event: Event): Future[Unit] =
     db.run(EventsQueryRepository.addEvent(event))
-      .map { _ > 0 }
+      .map { _ => () }
 
 
-  override def updateEvent(eventId: String, updated: Event): Future[Boolean] = {
+  override def updateEvent(eventId: String, updated: Event): Future[Unit] = {
     val query: Seq[DBIO[Int]] = Seq(
       EventsQueryRepository.changeTitle(_, updated.title),
       EventsQueryRepository.changeSummary(_, updated.summary),
@@ -45,27 +45,26 @@ class CalendarServiceImpl extends CalendarService {
       EventsQueryRepository.changeRepeating(_, updated.repeating)
     ).map { _(eventId) }
     db.run(DBIO.sequence(query))
-      .map { _.sum }
-      .map { _ >= 4 }
+      .map { _ => () }
   }
 
 
-  override def removeEvent(eventId: String): Future[Boolean] =
+  override def removeEvent(eventId: String): Future[Unit] =
     db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
-      case Some(event) => db.run(EventsQueryRepository.removeEvent(event)).map { _ > 0}
-      case None => throw new EventNotFoundException
+      case Some(event) => db.run(EventsQueryRepository.removeEvent(event)).map { _ => () }
+      case None => Future.failed(new EventNotFoundException)
     }
 
 
-  override def moveEvent(eventId: String, to: Timestamp): Future[Boolean] = {
+  override def moveEvent(eventId: String, to: Timestamp): Future[Unit] = {
     db.run(EventsQueryRepository.getEvent(eventId)).flatMap {
       case Some(event) =>
         val newEnd = new Timestamp(to.getTime + event.duration)
         db.run(EventsQueryRepository.between(to, newEnd).map { _.length }).flatMap {
-          case count if count == 0 => db.run(EventsQueryRepository.changeDatetime(eventId, to)).map { _ > 0 }
-          case _ => throw new EventsConflictException
+          case count if count == 0 => db.run(EventsQueryRepository.changeDatetime(eventId, to)).map { _ => () }
+          case _ => Future.failed(new EventsConflictException)
         }
-      case None => throw new EventNotFoundException
+      case None => Future.failed(new EventNotFoundException)
     }
   }
 }

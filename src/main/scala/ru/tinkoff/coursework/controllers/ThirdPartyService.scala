@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait ThirdPartyService {
   this: CalendarService =>
 
-  def synchronize(from: Option[Timestamp], to: Option[Timestamp]): Future[Boolean] = {
+  def synchronize(from: Option[Timestamp], to: Option[Timestamp]): Future[Unit] = {
     val events = (from, to) match {
       case (Some(left), Some(right)) => allBetween(left, right)
       case (Some(left), None) => later(left)
@@ -38,9 +38,7 @@ trait ThirdPartyService {
               EventsQueryRepository.addEvent(e)
           }}
         .map { _.map { db.run(_) } }
-        .flatMap { Future.sequence(_) }
-        .map { _.sum }
-        .map { _ > 0 }
+        .map { _ => () }
       }
   }
 }
