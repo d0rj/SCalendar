@@ -9,12 +9,12 @@ import ru.tinkoff.coursework.EventNotFoundException
 import ru.tinkoff.coursework.logic.AsyncBcryptImpl
 
 import java.sql.Timestamp
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 
-class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService with ThirdPartyService) {
+class UserCalendarApi(calendarService: CalendarService, googleCalendarService: CalendarService with ThirdPartyService)
+                     (implicit ec: ExecutionContext){
   import akka.http.scaladsl.server.Directives._
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 

@@ -3,17 +3,14 @@ import ru.tinkoff.coursework.{EventNotFoundException, EventsConflictException}
 import ru.tinkoff.coursework.storage.{Event, EventsQueryRepository}
 
 import java.sql.Timestamp
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.MySQLProfile.api._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
 
-
-class CalendarServiceImpl extends CalendarService {
+class CalendarServiceImpl(implicit ec: ExecutionContext) extends CalendarService {
   private val db = Database.forConfig("mysqlDB")
 
-  Await.result(db.run(EventsQueryRepository.AllEvents.schema.createIfNotExists), Duration.Inf)
+  db.run(EventsQueryRepository.AllEvents.schema.createIfNotExists)
 
 
   override def getEvent(eventId: String): Future[Option[Event]] =

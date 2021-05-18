@@ -3,16 +3,14 @@ package ru.tinkoff.coursework.controllers
 import ru.tinkoff.coursework.storage.EventsQueryRepository
 
 import java.sql.Timestamp
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.MySQLProfile.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 
 trait ThirdPartyService {
   this: CalendarService =>
 
-  def synchronize(from: Option[Timestamp], to: Option[Timestamp]): Future[Unit] = {
+  def synchronize(from: Option[Timestamp], to: Option[Timestamp])(implicit ec: ExecutionContext): Future[Unit] = {
     val events = (from, to) match {
       case (Some(left), Some(right)) => allBetween(left, right)
       case (Some(left), None) => later(left)

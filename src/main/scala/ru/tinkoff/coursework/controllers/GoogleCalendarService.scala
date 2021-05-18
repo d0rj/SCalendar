@@ -17,12 +17,11 @@ import ru.tinkoff.coursework.storage.Event
 import java.io.{File, FileNotFoundException, IOException, InputStreamReader}
 import java.sql.Timestamp
 import java.util.Collections
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 
-class GoogleCalendarService extends CalendarService with ThirdPartyService {
+class GoogleCalendarService(implicit ec: ExecutionContext) extends CalendarService with ThirdPartyService {
   import ru.tinkoff.coursework.logic.GoogleEventConverter._
   import scala.jdk.CollectionConverters._
 
